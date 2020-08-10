@@ -1,4 +1,5 @@
 # import Flask and And other necessary items
+import config 
 from flask import (
     Flask,
     Response,
@@ -9,21 +10,14 @@ from flask import (
     abort,    
 )
 # import Flask login and And other necessary items
-from flask_login import (
-    LoginManager,
-    UserMixin,
-    current_user,
-    login_required,
-    login_user,
-    logout_user,
-)
+from flask_login import LoginManager, UserMixin, \
+                                login_required, login_user, logout_user
 
 app = Flask(__name__)
 
 # config 
 app.config.update(
-    DEBUG = True,
-    SECRET_KEY = 'secret_xxx'
+    SECRET_KEY = config.SECRET_KEY
 )
 
 # config login manager
@@ -35,15 +29,13 @@ class User(UserMixin):
 
     def __init__(self, id):
         self.id = id
-        self.name = "user" + str(id)
-        self.password = self.name + "_secret"
-        
+    
     def __repr__(self):
-        return "%d/%s/%s" % (self.id, self.name, self.password)
+        return "%d" % (self.id)
 
 
 # create some users with ids 1 to 20       
-users = [User(id) for id in range(1, 21)]
+users = User(0)
 
 
 # some protected url
@@ -56,14 +48,12 @@ def home():
 # somewhere to login
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
+    if request.method == 'POST': # TODO : Sotp the brute forec  
         username = request.form['username']
         password = request.form['password']        
-        if password == username + "_secret":
-            id = username.split('user')[1]
-            user = User(id)
-            login_user(user)
-            return redirect(request.args.get("next"))
+        if password == config.PASSWORD and username == config.USERNAME:
+            login_user()
+            return redirect(request.args.get("next")) # TODO : check url validity 
         else:
             return abort(401)
     else:
@@ -86,7 +76,7 @@ def logout():
 
 # handle login failed
 @app.errorhandler(401)
-def page_not_found(e):
+def page_not_found(error):
     return Response('<p>Login failed</p>')
     
     
